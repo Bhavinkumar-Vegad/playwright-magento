@@ -15,29 +15,29 @@ export class SignUpPage {
     await this.page.getByRole('button', { name: 'Create an Account' }).click();
   }
 
-  async assertRequiredFieldErrors(fields: string[]) {
+  async assertRequiredErrors(fields: string[]) {
+    const errorMap: Record<string, { selector: string; message: string }> = {
+      'First Name': { selector: '#firstname-error', message: 'This is a required field.' },
+      'Last Name': { selector: '#lastname-error', message: 'This is a required field.' },
+      'Email': { selector: '#email_address-error', message: 'This is a required field.' },
+      'Invalid Email Format': { selector: '#email_address-error', message: 'Please enter a valid email address (Ex: johndoe@domain.com).' },
+      'Password': { selector: '#password-error', message: 'This is a required field.' },
+      'Password Min Length': { selector: '#password-error', message: 'Minimum length of this field must be equal or greater than 8 symbols. Leading and trailing spaces will be ignored.' },
+      'Password Complexity': { selector: '#password-error', message: 'Minimum of different classes of characters in password is 3. Classes of characters: Lower Case, Upper Case, Digits, Special Characters.' },
+      'Confirm Password': { selector: '#password-confirmation-error', message: 'This is a required field.' },
+    };
+
     for (const field of fields) {
-      // Map field names to error element IDs
-      let errorId = '';
-      switch (field) {
-        case 'First Name':
-          errorId = '#firstname-error';
-          break;
-        case 'Last Name':
-          errorId = '#lastname-error';
-          break;
-        case 'Email':
-          errorId = '#email_address-error';
-          break;
-        case 'Password':
-          errorId = '#password-error';
-          break;
-        case 'Confirm Password':
-          errorId = '#password-confirmation-error';
-          break;
+      if (field === 'Duplicate Email') {
+        await expect(this.page.locator('.message-error')).toHaveText(
+          'There is already an account with this email address. If you are sure that it is your email address, click here to get your password and access your account.'
+        );
+        continue;
       }
-      if (errorId) {
-        await expect(this.page.locator(errorId)).toHaveText('This is a required field.');
+
+      const error = errorMap[field];
+      if (error) {
+        await expect(this.page.locator(error.selector)).toHaveText(error.message);
       }
     }
   }

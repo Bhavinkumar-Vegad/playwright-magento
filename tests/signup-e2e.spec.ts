@@ -1,100 +1,104 @@
+import { test } from '../fixture/fixtures';
+import { generateUserData } from '../utils/testData';
 
-import { test, expect } from '@playwright/test';
-import { HomePage } from '../pages/HomePage';
-import { SignUpPage } from '../pages/SignUpPage';
-import { SignInPage } from '../pages/SignInPage';
+test.describe('User Sign-Up and Sign-In Scenarios', () => {
+  test('should allow a new user to sign up and login successfully', async ({ homePage, signUpPage, signInPage }) => {
+    // Dynamic test data
+    const { firstName, lastName, email, password } = generateUserData();
 
-// Helper for required fields
-const requiredFields = [
-  'First Name',
-  'Last Name',
-  'Email',
-  'Password',
-  'Confirm Password',
-];
-test.describe('Sign Up Required Fields Validation', () => {
-  test('should show errors when all required fields are empty', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const signUpPage = new SignUpPage(page);
+    await homePage.goto();
+    await homePage.clickCreateAccount();
+    await signUpPage.fillSignUpForm(firstName, lastName, email, password);
+    await signUpPage.submit();
+    await homePage.assertRegistrationSuccess();
+    await homePage.assertUserInfo(firstName, lastName, email);
+    await homePage.signOut();
+    await homePage.clickSignIn();
+    await signInPage.fillSignInForm(email, password);
+    await signInPage.submit();
+    await homePage.assertLoginUserInfo(firstName, lastName);
+  });
+
+  test('should show errors when all required fields are empty', async ({ homePage, signUpPage }) => {
     await homePage.goto();
     await homePage.clickCreateAccount();
     await signUpPage.submit();
-    await signUpPage.assertRequiredFieldErrors(requiredFields);
+    await signUpPage.assertRequiredErrors(['First Name', 'Last Name', 'Email', 'Password', 'Confirm Password']);
   });
 
-  test('should show error when only First Name is empty', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const signUpPage = new SignUpPage(page);
+  test('should show error when only First Name is empty', async ({ homePage, signUpPage }) => {
     await homePage.goto();
     await homePage.clickCreateAccount();
     await signUpPage.fillSignUpForm('', 'Smith', 'brainsmith13071434@mailinator.com', 'Password123!');
     await signUpPage.submit();
-    await signUpPage.assertRequiredFieldErrors(['First Name']);
+    await signUpPage.assertRequiredErrors(['First Name']);
   });
 
-  test('should show error when only Last Name is empty', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const signUpPage = new SignUpPage(page);
+  test('should show error when only Last Name is empty', async ({ homePage, signUpPage }) => {
     await homePage.goto();
     await homePage.clickCreateAccount();
     await signUpPage.fillSignUpForm('Brain', '', 'brainsmith13071434@mailinator.com', 'Password123!');
     await signUpPage.submit();
-    await signUpPage.assertRequiredFieldErrors(['Last Name']);
+    await signUpPage.assertRequiredErrors(['Last Name']);
   });
 
-  test('should show error when only Email is empty', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const signUpPage = new SignUpPage(page);
+  test('should show error when only Email is empty', async ({ homePage, signUpPage }) => {
     await homePage.goto();
     await homePage.clickCreateAccount();
     await signUpPage.fillSignUpForm('Brain', 'Smith', '', 'Password123!');
     await signUpPage.submit();
-    await signUpPage.assertRequiredFieldErrors(['Email']);
+    await signUpPage.assertRequiredErrors(['Email']);
   });
 
-  test('should show error when only Password is empty', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const signUpPage = new SignUpPage(page);
+  test('should show error when only Password is empty', async ({ homePage, signUpPage }) => {
     await homePage.goto();
     await homePage.clickCreateAccount();
     await signUpPage.fillSignUpForm('Brain', 'Smith', 'brainsmith13071434@mailinator.com', '');
     await signUpPage.submit();
-    await signUpPage.assertRequiredFieldErrors(['Password']);
+    await signUpPage.assertRequiredErrors(['Password']);
   });
 
-  test('should show error when only Confirm Password is empty', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const signUpPage = new SignUpPage(page);
+  test('should show error when only Confirm Password is empty', async ({ homePage, signUpPage, page }) => {
     await homePage.goto();
     await homePage.clickCreateAccount();
     // Fill all except Confirm Password
     await signUpPage.fillSignUpForm('Brain', 'Smith', 'brainsmith13071434@mailinator.com', 'Password123!');
     await page.getByRole('textbox', { name: 'Confirm Password*' }).fill('');
     await signUpPage.submit();
-    await signUpPage.assertRequiredFieldErrors(['Confirm Password']);
+    await signUpPage.assertRequiredErrors(['Confirm Password']);
   });
-});
 
-test.skip('test', async ({ page }) => {
-  const homePage = new HomePage(page);
-  const signUpPage = new SignUpPage(page);
-  const signInPage = new SignInPage(page);
+  test('should show error when try to signup with already used email', async ({ homePage, signUpPage }) => {
+    await homePage.goto();
+    await homePage.clickCreateAccount();
+    await signUpPage.fillSignUpForm('Tonny', 'Smith', 'tonnysmith13071435@mailinator.com', 'Password123!');
+    await signUpPage.submit();
+    await signUpPage.assertRequiredErrors(['Duplicate Email']);
+  });
 
-  // Dynamic test data
-  const firstName = 'Tonny';
-  const lastName = 'Smith';
-  const email = `tonnysmith13071435@mailinator.com`;
-  const password = 'Password123!';
+    test('should show error for invalid email format', async ({ homePage, signUpPage }) => {
+    await homePage.goto();
+    await homePage.clickCreateAccount();
+    await signUpPage.fillSignUpForm('Brain', 'Smith', 'invalid-email', 'Password123!');
+    await signUpPage.submit();
+    await signUpPage.assertRequiredErrors(['Invalid Email Format']);
+  });
 
-  await homePage.goto();
-  await homePage.clickCreateAccount();
-  await signUpPage.fillSignUpForm(firstName, lastName, email, password);
-  await signUpPage.submit();
-  await homePage.assertRegistrationSuccess();
-  await homePage.assertUserInfo(firstName, lastName, email);
-  await homePage.signOut();
-  await homePage.clickSignIn();
-  await signInPage.fillSignInForm(email, password);
-  await signInPage.submit();
-  await homePage.assertLoginUserInfo(firstName, lastName);
+  test('should show error for password minimum length', async ({ homePage, signUpPage }) => {
+    await homePage.goto();
+    await homePage.clickCreateAccount();
+    await signUpPage.fillSignUpForm('Brain', 'Smith', 'brainsmith13071434@mailinator.com', 'Pass1!');
+    await signUpPage.submit();
+    await signUpPage.assertRequiredErrors(['Password Min Length']);
+  });
+
+  test('should show error for password complexity', async ({ homePage, signUpPage }) => {
+    await homePage.goto();
+    await homePage.clickCreateAccount();
+    // Only lowercase and digits, not enough character classes
+    await signUpPage.fillSignUpForm('Brain', 'Smith', 'brainsmith13071434@mailinator.com', 'password1');
+    await signUpPage.submit();
+    await signUpPage.assertRequiredErrors(['Password Complexity']);
+  });
+
 });

@@ -4,7 +4,7 @@ export class HomePage {
   constructor(private page: Page) {}
 
   async goto() {
-    await this.page.goto('https://magento.softwaretestingboard.com/');
+    await this.page.goto('/');
   }
 
   async clickCreateAccount() {
@@ -16,7 +16,7 @@ export class HomePage {
   }
 
   async assertRegistrationSuccess() {
-    await expect(this.page).toHaveURL('https://magento.softwaretestingboard.com/customer/account/');
+    await expect(this.page).toHaveURL('/customer/account/');
     await expect(this.page.getByRole('alert').first()).toContainText('Thank you for registering with Main Website Store.');
   }
 
@@ -27,8 +27,8 @@ export class HomePage {
   async signOut() {
     await this.page.getByRole('listitem').filter({ hasText: 'Change My Account My Wish' }).locator('button').click();
     await this.page.getByRole('link', { name: 'Sign Out' }).click();
-    await this.page.goto('https://magento.softwaretestingboard.com/customer/account/logoutSuccess/');
-    await expect(this.page).toHaveURL('https://magento.softwaretestingboard.com/customer/account/logoutSuccess/');
+    await this.page.goto('/customer/account/logoutSuccess/');
+    await expect(this.page).toHaveURL('/customer/account/logoutSuccess/');
   }
 
   async assertLoginUserInfo(firstName: string, lastName: string) {
